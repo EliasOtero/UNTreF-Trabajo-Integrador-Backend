@@ -22,7 +22,7 @@ Accept: application/json
 
 ### 2. Obtener un producto por su código
 # Reemplaza '1' con un código de producto que exista en tu base de datos.
-GET {{api_url}}/productos/1
+GET {{api_url}}/productos/101
 Accept: application/json
 
 ### 2.1 Obtener un producto con un código inexistente (debería dar 404)
@@ -45,7 +45,7 @@ Content-Type: application/json
 ### 4. Modificar un producto existente
 # Reemplaza '1' con un código de producto que exista.
 # Solo se necesita enviar los campos a modificar.
-PUT {{api_url}}/productos/1
+PUT {{api_url}}/productos/101
 Content-Type: application/json
 
 {
