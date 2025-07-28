@@ -14,176 +14,309 @@ const allProducts = async (req, res) =>
         }
     };
 
+//Productos por codigo
 const productByCode = async (req, res) =>
     {
-        try 
-        {
-            const producto = await productDB.findOne({ codigo: parseInt ( req.params.codigo ) });
-            if (!producto)
-                {
-                    return res.status(404).json({ mensaje: 'Producto no encontrado o no existe.' });
-                }
-                res.status(200).json(producto);
-        } catch (error)
-        {
-            res.status(500).json({ error: 'Error al buscar el producto' });
-        }
+       try 
+       {
+        const codigoStr = req.params.codigo;
 
+        //Verificar que el usuario use numeros
+        if (isNaN(codigoStr)) 
+            {
+                return res.status(400).json({ mensaje: 'El codigo debe ser un numero valido' });
+            }
+
+        const codigo = Number(codigoStr);
+        const producto = await productDB.findOne({ codigo });
+
+        if (!producto) 
+            {
+                return res.status(400).json({ mensaje: 'Producto no encontrado o no existe.' });
+            }
+        res.status(200).json(producto);
+
+       } catch (error)
+       {
+        res.status(500).json({ error: 'Error al buscar el producto.' });
+       }
     };
 
+//Crear un nuevo producto
 const createProduct = async (req, res) => 
     {
         try 
         {
-            const existe = await productDB.findOne({ codigo: req.body.codigo });
-            if (existe) 
+            const { codigo, nombre, precio, categoria } = req.body;
+
+            //Validacion de campos requeridos
+            if(!codigo || !nombre || !precio || !categoria )
                 {
-                    return res.status(409).json({ mensaje: 'El codigo ya esta en uso' });
+                    return res.status(400).json({ mensaje: 'Faltan campos obligatorios '});
                 }
-            const nuevoProducto = await productDB.create(req.body);
+            //Validacion de tipo de datos
+            if (typeof codigo !== 'number' || typeof nombre !== 'string' || typeof precio !== 'number' || !Array.isArray(categoria))
+                {
+                    return res.status(400).json({ mensaje: 'Datos invalidos: revisa los tipos de cada campo' });
+                }
+
+            //verificar unicidad del codigo
+            const existe = await productDB.findOne({ codigo });
+
+            if (existe)
+                {
+                    return res.status(409).json({ mensaje: 'El codigo ya esta en uso o el producto ya existe' });
+                }
+            
+            const nuevoProducto = await productDB.create({ codigo, nombre, precio, categoria });
             res.status(201).json(nuevoProducto);
+
         } catch (error)
         {
-            res.status(500).json({ error: 'Error al crear el producto' });
+            res.status(500).json({ error: 'Error al crear el producto '});
         }
-    }
+    };
 
+//Actualizar un producto
 const updateProduct = async (req, res) =>
     {
         try 
         {
-            const codigo = req.params.codigo;
-            const cambios = req.body;
+            const codigoStr = req.params.codigo;
 
-            const productoActualizado = await productDB.findOneAndUpdate
+            //validacion: codigo debe ser numerico
+            if(isNaN(codigoStr))
+                {
+                    return res.status(400).json({ mensaje: 'El codigo debe ser un numero valido' });
+                }
+            
+            const codigo = Number(codigoStr);
+            const cambios = req.body
+
+            //Validar que se hayan enviado campos
+            if(!cambios || Object.keys(cambios).length === 0)
+                {
+                    return res.status(400).json({ mensaje: 'No se enviaron datos para actualizar' });
+                }
+            
+            //Evitar la modificacion del codigo de producto
+            if ('codigo' in cambios)
+                {
+                    return res.status(400).json({ mensaje: 'No se puede modificar el codigo del producto' });
+                }
+
+            const productoActualizado = await productDB.findOneAndUpdate 
             (
                 { codigo },
                 cambios,
-                { new: true}
+                { new: true }
             );
-            if (!productoActualizado)
+
+            if (!productoActualizado) 
                 {
                     return res.status(404).json({ mensaje: 'Producto no encontrado' });
                 }
             res.status(200).json(productoActualizado);
-        } catch (error)
+        }catch (error)
         {
             res.status(500).json({ error: 'Error al modificar el producto' });
         }
     };
 
+//Borrar un producto
 const deleteProduct = async (req, res) =>
     {
-        try
+        try 
         {
-            codigo = req.params.codigo;
+            const codigoStr = req.params.codigo;
+
+            //Validacion de numero
+            if(isNaN(codigoStr))
+                {
+                    return res.status(400).json({ mensaje: 'El codigo debe ser un nuermo valido' });
+                }
+
+            const codigo = Number(codigoStr);
             const resultado = await productDB.deleteOne({ codigo });
 
-            if (resultado.deletedCount === 0)
+            if (resultado.deletedCount === 0) 
                 {
                     return res.status(404).json({ mensaje: 'Producto no encontrado' });
                 }
-            res.status(200).json({ mensaje: 'Producto eliminado correctamente' });
-        } catch (error)
+            
+            res.status(200).json({ mensaje: `Producto con codigo ${codigo} eliminado correctamente` });
+        }catch (error)
         {
-            res.status(500).json({ error: 'Error al elimiar el producto' });
+            res.status(500).json({ error: 'Error al eliminar el producto' });
         }
     };
 
+//Buscar un producto por termino
 const searchProduct = async (req, res) => 
     {
         try 
         {
-            const q = req.query.q;
+            const q = req.query.q?.trim();
+
             if (!q)
                 {
-                    return res.status(400).json({ mensaje: 'Falta el parametro de busqueda' });
+                    return res.status(400).json({ mensaje: 'falta el parametro de busqueda' });
                 }
-            const productos = await productDB.find({ nombre: {$regex: q, $options: 'i'}});
-            res.status(200).json({
-                mensaje: productos.length === 0 ? 'No se encontraron productos' :undefined,
+
+            const productos = await productDB.find({ nombre: { $regex: q, $options: 'i' } });
+            const respuesta = 
+            {
+                cantidad: productos.length,
                 resultados: productos
-            });
-        } catch (error)
+            };
+
+            if (productos.length === 0)
+                {
+                    respuesta.mensaje = 'No se encontraron productos';
+                }
+            res.status(200).json(respuesta);
+        }catch (error)
         {
             res.status(500).json({ error: 'Error al buscar productos' });
         }
     };
 
+//Productos por categorias
 const productsByCategories = async (req, res) => 
     {
-        try
+        try 
         {
-            const categoria = req.params.nombre.trim();
-            const productos = await productDB.find({
-                categoria: { $regex: `^${categoria}$`, $options: 'i'}});
-            
+            const categoriaRaw = req.params.nombre;
+
+            if (!categoriaRaw || categoriaRaw.trim() === '')
+                {
+                    return res.status(400).json({ mensaje: 'Debe proporcionar una categoria valida' });
+                }
+
+            const categoria = categoriaRaw.trim();
+            const productos = await productDB.find({ categoria: { $regex: categoria, $options: 'i' }});
+
             if (productos.length === 0)
                 {
                     return res.status(404).json({ mensaje: 'No se encontraron productos para esa categoria' });
                 }
             res.status(200).json(productos);
-        } catch (error) 
+        }catch (error)
         {
-            res.status(500).json({ error: 'Error al filtrar por categoria' })
+            res.status(500).json({ error: 'Error al filtrar por categoria' });
         }
     };
 
+//Productos por rango de precio
 const productsByPrice = async (req, res) =>
     {
         try
         {
             const { min, max } = req.params;
+            
+            if (!min || !max )
+                {
+                    return res.status(400).json({ mensaje: 'Debe proporcionar ambios valores: minimo y maximo '});
+                }
+
             const minPrecio = Number(min);
             const maxPrecio = Number(max);
+
             if (isNaN(minPrecio) || isNaN(maxPrecio)) 
                 {
-                    return res.status(400).json({ mensaje: 'Parametros de precio invalidos' });
+                    return res.status(400).json({ mensaje: 'Los parametros de precio debe ser numeros validos' });
                 }
-            if (minPrecio > maxPrecio) 
+
+            if (minPrecio > maxPrecio)
                 {
                     return res.status(400).json({ mensaje: 'El precio minimo no puede ser mayor que el maximo' });
                 }
-            const productos = await productDB.find({
-                precio : { $gte: minPrecio, $lte: maxPrecio}});
-            if (productos.length === 0)
+
+            const productos = await productDB.find({precio: { $gte: minPrecio, $lte: maxPrecio }});
+
+            if(productos.length === 0)
                 {
-                    return res.status(404).json({ mensaje: 'No se encontraron productos con ese rango de precio' })
+                    return res.status(404).json({ mensaje: 'No se encontraron productos en ese rango de precio' });
                 }
             res.status(200).json(productos);
         } catch (error) 
         {
             res.status(500).json({ error: 'Error al filtrar por rango de precio' });
         }
-    }
+    };
 
+//Carga de productos en grupos
 const massiveProductsLoad = async (req, res) =>
     {
         try 
         {
             const productos = req.body;
+
+            //Validar que no sea un array vacio
             if (!Array.isArray(productos) || productos.length === 0)
                 {
-                    return res.status(400).json({ mensaje: 'Se debe enviar un arreglo de productos no vacio'});
+                    return res.status(400).json({ mensaje : 'Se debe enviar un arreglo de productos no vacio' });
                 }
+            
+            //Validar duplicados
             const codigos = productos.map(p => p.codigo);
             const codigosUnicos = new Set(codigos);
+            
             if(codigos.length !== codigosUnicos.size)
                 {
-                    return res.status(400).json({ mensaje: 'Hay codigos repetidos en la lista enviada'});
+                    return res.status(400).json({ mensaje: 'Hay codigos repetidos en la lista enviada '});
                 }
+
+            //Validar que no existan en la Database
             const existentes = await productDB.find({ codigo: { $in: codigos } });
-            if(existentes.length > 0 )
+            
+            if(existentes.length > 0)
                 {
-                    return res.status(409).json({ mensaje: 'Algunos codigos ya existen en la base de datos', codigos: existentes.map(p => p.codigo) });
+                    return res.status(409).json
+                    (
+                        {
+                            mensaje: 'Algunos codigos ya existen en la base de datos',
+                            codigos: existentes.map(p => p.codigo)
+                        });
                 }
+
+            //Validar estructura de cada producto
+            const errores = [];
+            productos.forEach(({ codigo, nombre, precio, categoria }, i) => 
+                {
+                    if 
+                    (
+                        typeof codigo !== 'number' ||
+                        typeof nombre !== 'string' ||
+                        typeof precio !== 'number' ||
+                        !Array.isArray(categoria)
+                    )
+                    {
+                        errores.push(`Producto en posicion ${i} tiene datos invalidos` );
+                    }
+                });
+
+            if (errores.length > 0)
+                {
+                    return res.status(400).json({ mensaje: 'Error en la validacion de los productos', errores });
+                }
+
+            //Insertar productos
             const nuevosProductos = await productDB.insertMany(productos);
-            res.status(201).json({ mensaje: 'Productos insertados correctamente', nuevosProductos});
-        } catch (error)
+            res.status(201).json
+            (
+                {
+                    mensaje: 'Productos insertados correctamente',
+                    cantidad: nuevosProductos.length,
+                    nuevosProductos
+                }
+            );
+
+        }catch (error)
         {
             res.status(500).json({ error: 'Error en la carga masiva de productos' });
         }
-    }
+    };
 
 
 module.exports =
