@@ -1,7 +1,6 @@
-const { set } = require('mongoose');
 const { productDB } = require('../models/product');
 
-//Obtener todos los productos
+//Obtener todos los productos.
 const allProducts = async (req, res) => 
     {
         try
@@ -14,14 +13,14 @@ const allProducts = async (req, res) =>
         }
     };
 
-//Obtener productos por codigo
+//Obtener productos por codigo.
 const productByCode = async (req, res) =>
     {
        try 
        {
         const codigoStr = req.params.codigo;
 
-        //Validar que el codigo sea un numero valido
+        //Validar que el codigo sea un numero valido.
         if (isNaN(codigoStr)) 
             {
                 return res.status(400).json({ mensaje: 'El codigo debe ser un numero valido' });
@@ -42,25 +41,25 @@ const productByCode = async (req, res) =>
        }
     };
 
-//Crear un nuevo producto
+//Crear un nuevo producto.
 const createProduct = async (req, res) => 
     {
         try 
         {
             const { codigo, nombre, precio, categoria } = req.body;
 
-            //Validacion de campos requeridos
+            //Validacion de campos requeridos.
             if(!codigo || !nombre || !precio || !categoria )
                 {
                     return res.status(400).json({ mensaje: 'Faltan campos obligatorios '});
                 }
-            //Validacion de tipo de datos
+            //Validacion de tipo de datos.
             if (typeof codigo !== 'number' || typeof nombre !== 'string' || typeof precio !== 'number' || !Array.isArray(categoria))
                 {
                     return res.status(400).json({ mensaje: 'Datos invalidos: revisa los tipos de cada campo' });
                 }
 
-            //verificar unicidad del codigo
+            //verificar unicidad del codigo.
             const existe = await productDB.findOne({ codigo });
 
             if (existe)
@@ -77,14 +76,14 @@ const createProduct = async (req, res) =>
         }
     };
 
-//Actualizar un producto existente
+//Actualizar un producto existente.
 const updateProduct = async (req, res) =>
     {
         try 
         {
             const codigoStr = req.params.codigo;
 
-            //validacion que el codigo debe ser numerico
+            //validacion que el codigo debe ser numerico.
             if(isNaN(codigoStr))
                 {
                     return res.status(400).json({ mensaje: 'El codigo debe ser un numero valido' });
@@ -93,13 +92,13 @@ const updateProduct = async (req, res) =>
             const codigo = Number(codigoStr);
             const cambios = req.body
 
-            //Validar que se hayan enviado campos a modificar 
+            //Validar que se hayan enviado campos a modificar.
             if(!cambios || Object.keys(cambios).length === 0)
                 {
                     return res.status(400).json({ mensaje: 'No se enviaron datos para actualizar' });
                 }
             
-            //Evitar la modificacion del codigo de producto
+            //Evitar la modificacion del codigo de producto.
             if ('codigo' in cambios)
                 {
                     return res.status(400).json({ mensaje: 'No se puede modificar el codigo del producto' });
@@ -123,14 +122,14 @@ const updateProduct = async (req, res) =>
         }
     };
 
-//Borrar un producto
+//Borrar un producto.
 const deleteProduct = async (req, res) =>
     {
         try 
         {
             const codigoStr = req.params.codigo;
 
-            //Validacion de codigo numerico
+            //Validacion de codigo numerico.
             if(isNaN(codigoStr))
                 {
                     return res.status(400).json({ mensaje: 'El codigo debe ser un nuermo valido' });
@@ -151,7 +150,7 @@ const deleteProduct = async (req, res) =>
         }
     };
 
-//Buscar un producto por termino en el nombre 
+//Buscar un producto por termino en el nombre.
 const searchProduct = async (req, res) => 
     {
         try 
@@ -181,7 +180,7 @@ const searchProduct = async (req, res) =>
         }
     };
 
-//Obtener productos por categoria
+//Obtener productos por categoria.
 const productsByCategories = async (req, res) => 
     {
         try 
@@ -207,7 +206,7 @@ const productsByCategories = async (req, res) =>
         }
     };
 
-//Obtener productos por rango de precio
+//Obtener productos por rango de precio.
 const productsByPrice = async (req, res) =>
     {
         try
@@ -245,20 +244,20 @@ const productsByPrice = async (req, res) =>
         }
     };
 
-//Carga masiva de productos
+//Carga masiva de productos.
 const massiveProductsLoad = async (req, res) =>
     {
         try 
         {
             const productos = req.body;
 
-            //Validar que no sea un array vacio
+            //Validar que no sea un array vacio.
             if (!Array.isArray(productos) || productos.length === 0)
                 {
                     return res.status(400).json({ mensaje : 'Se debe enviar un arreglo de productos no vacio' });
                 }
             
-            //Validar codigos duplicados
+            //Validar codigos duplicados.
             const codigos = productos.map(p => p.codigo);
             const codigosUnicos = new Set(codigos);
             
@@ -267,7 +266,7 @@ const massiveProductsLoad = async (req, res) =>
                     return res.status(400).json({ mensaje: 'Hay codigos repetidos en la lista enviada '});
                 }
 
-            //Validar que los codigos no existan en la Database
+            //Validar que los codigos no existan en la Database.
             const existentes = await productDB.find({ codigo: { $in: codigos } });
             
             if(existentes.length > 0)
@@ -280,7 +279,7 @@ const massiveProductsLoad = async (req, res) =>
                         });
                 }
 
-            //Validar estructura y tipos de cada producto
+            //Validar estructura y tipos de cada producto.
             const errores = [];
             productos.forEach(({ codigo, nombre, precio, categoria }, i) => 
                 {
@@ -301,7 +300,7 @@ const massiveProductsLoad = async (req, res) =>
                     return res.status(400).json({ mensaje: 'Error en la validacion de los productos', errores });
                 }
 
-            //Insertar productos validos
+            //Insertar productos validos.
             const nuevosProductos = await productDB.insertMany(productos);
             res.status(201).json
             (

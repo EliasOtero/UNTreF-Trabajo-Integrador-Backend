@@ -1,4 +1,4 @@
-//Importacion de los modulos necesarios
+//Importacion de los modulos necesarios.
 const express = require('express')
 const connectDB = require('./config/database')
 const routes = require('./routes/productRoutes')
@@ -23,8 +23,8 @@ app.get('/api', (req, res) =>
         res.send('Bienvenido a /api. Proba /api/productos para obtener la lista de productos.')
     })
 
-//Carga los productos desde un archivo JSON solo si la base de datos está vacía
-//Evita duplicados si los datos ya se encuentran cargados en la base de datos
+//Carga los productos desde un archivo JSON solo si la base de datos está vacía.
+//Evita duplicados si los datos ya se encuentran cargados en la base de datos.
 const cargarProductosDesdeJSON = async () =>
     {
         const count = await productDB.countDocuments();
@@ -40,7 +40,7 @@ const cargarProductosDesdeJSON = async () =>
         console.log('JSON cargado con exito.')
     }
 
-//Inicializacion del servidor
+//Inicializacion del servidor.
 const start = async () => 
     {
         try
@@ -56,7 +56,6 @@ const start = async () =>
             process.exit(1)
         }
     }
-
 
 start();
 
