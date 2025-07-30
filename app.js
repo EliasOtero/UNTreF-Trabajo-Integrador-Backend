@@ -1,3 +1,4 @@
+//Importacion de los modulos necesarios
 const express = require('express')
 const connectDB = require('./config/database')
 const routes = require('./routes/productRoutes')
@@ -22,7 +23,8 @@ app.get('/api', (req, res) =>
         res.send('Bienvenido a /api. Proba /api/productos para obtener la lista de productos.')
     })
 
-//Revisa que el archivo JSON de los productos se encuentre en MongoDB, de no estarlo lo sube, caso contrario pasa a conectar directamente.
+//Carga los productos desde un archivo JSON solo si la base de datos está vacía
+//Evita duplicados si los datos ya se encuentran cargados en la base de datos
 const cargarProductosDesdeJSON = async () =>
     {
         const count = await productDB.countDocuments();
@@ -45,14 +47,15 @@ const start = async () =>
         {
             await connectDB();
             await cargarProductosDesdeJSON();
-            app.listen(3000, () => console.log('Servidor funciando en el puerto 3000'))
+            const PORT = process.env.PORT || 3000;
+
+            app.listen(PORT, () => console.log(`Servidor funciando en el puerto ${PORT}`));
         } catch (error)
         {
-            console.error(error)
+            console.error('Error al iniciar el servidor:', error);
             process.exit(1)
         }
     }
-   
 
 
 start();

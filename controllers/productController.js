@@ -1,7 +1,7 @@
 const { set } = require('mongoose');
 const { productDB } = require('../models/product');
 
-//Mostrar todos los productos
+//Obtener todos los productos
 const allProducts = async (req, res) => 
     {
         try
@@ -14,14 +14,14 @@ const allProducts = async (req, res) =>
         }
     };
 
-//Productos por codigo
+//Obtener productos por codigo
 const productByCode = async (req, res) =>
     {
        try 
        {
         const codigoStr = req.params.codigo;
 
-        //Verificar que el usuario use numeros
+        //Validar que el codigo sea un numero valido
         if (isNaN(codigoStr)) 
             {
                 return res.status(400).json({ mensaje: 'El codigo debe ser un numero valido' });
@@ -77,14 +77,14 @@ const createProduct = async (req, res) =>
         }
     };
 
-//Actualizar un producto
+//Actualizar un producto existente
 const updateProduct = async (req, res) =>
     {
         try 
         {
             const codigoStr = req.params.codigo;
 
-            //validacion: codigo debe ser numerico
+            //validacion que el codigo debe ser numerico
             if(isNaN(codigoStr))
                 {
                     return res.status(400).json({ mensaje: 'El codigo debe ser un numero valido' });
@@ -93,7 +93,7 @@ const updateProduct = async (req, res) =>
             const codigo = Number(codigoStr);
             const cambios = req.body
 
-            //Validar que se hayan enviado campos
+            //Validar que se hayan enviado campos a modificar 
             if(!cambios || Object.keys(cambios).length === 0)
                 {
                     return res.status(400).json({ mensaje: 'No se enviaron datos para actualizar' });
@@ -130,7 +130,7 @@ const deleteProduct = async (req, res) =>
         {
             const codigoStr = req.params.codigo;
 
-            //Validacion de numero
+            //Validacion de codigo numerico
             if(isNaN(codigoStr))
                 {
                     return res.status(400).json({ mensaje: 'El codigo debe ser un nuermo valido' });
@@ -151,7 +151,7 @@ const deleteProduct = async (req, res) =>
         }
     };
 
-//Buscar un producto por termino
+//Buscar un producto por termino en el nombre 
 const searchProduct = async (req, res) => 
     {
         try 
@@ -181,7 +181,7 @@ const searchProduct = async (req, res) =>
         }
     };
 
-//Productos por categorias
+//Obtener productos por categoria
 const productsByCategories = async (req, res) => 
     {
         try 
@@ -207,7 +207,7 @@ const productsByCategories = async (req, res) =>
         }
     };
 
-//Productos por rango de precio
+//Obtener productos por rango de precio
 const productsByPrice = async (req, res) =>
     {
         try
@@ -245,7 +245,7 @@ const productsByPrice = async (req, res) =>
         }
     };
 
-//Carga de productos en grupos
+//Carga masiva de productos
 const massiveProductsLoad = async (req, res) =>
     {
         try 
@@ -258,7 +258,7 @@ const massiveProductsLoad = async (req, res) =>
                     return res.status(400).json({ mensaje : 'Se debe enviar un arreglo de productos no vacio' });
                 }
             
-            //Validar duplicados
+            //Validar codigos duplicados
             const codigos = productos.map(p => p.codigo);
             const codigosUnicos = new Set(codigos);
             
@@ -267,7 +267,7 @@ const massiveProductsLoad = async (req, res) =>
                     return res.status(400).json({ mensaje: 'Hay codigos repetidos en la lista enviada '});
                 }
 
-            //Validar que no existan en la Database
+            //Validar que los codigos no existan en la Database
             const existentes = await productDB.find({ codigo: { $in: codigos } });
             
             if(existentes.length > 0)
@@ -280,7 +280,7 @@ const massiveProductsLoad = async (req, res) =>
                         });
                 }
 
-            //Validar estructura de cada producto
+            //Validar estructura y tipos de cada producto
             const errores = [];
             productos.forEach(({ codigo, nombre, precio, categoria }, i) => 
                 {
@@ -301,12 +301,12 @@ const massiveProductsLoad = async (req, res) =>
                     return res.status(400).json({ mensaje: 'Error en la validacion de los productos', errores });
                 }
 
-            //Insertar productos
+            //Insertar productos validos
             const nuevosProductos = await productDB.insertMany(productos);
             res.status(201).json
             (
                 {
-                    mensaje: 'Productos insertados correctamente',
+                    mensaje: 'Productos creados correctamente',
                     cantidad: nuevosProductos.length,
                     nuevosProductos
                 }

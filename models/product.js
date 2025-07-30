@@ -1,12 +1,13 @@
 const mongoose = require('mongoose')
 
+//Definicion del esquema para un producto
 const productSchema = new mongoose.Schema(
     {
         codigo: 
         {
             type: Number,
             required: true,
-            unique: true,
+            unique: true, //Garantiza unicidad en la base de datos
         },
         nombre: 
         {
@@ -20,7 +21,7 @@ const productSchema = new mongoose.Schema(
         },
         categoria: 
         {
-            type: [String],
+            type: [String], //Array de strings
             required: true 
         }
     });
